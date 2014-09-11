@@ -19,7 +19,7 @@
   	  (options (:body @response))))
 
 (def start {
-	{:position {:x 0  :y 0} :exits (look) :visits 1}
+	{:x 0  :y 0} {:exits (look) :visits 1 :pos {:x 0 :y 0}}
 	})
 
 (defn won? [response]
@@ -27,10 +27,10 @@
 
 (defn option2coord [option current]
 	(cond 
-		(= :north option) {:x (:x current) :y (inc (:y current))}
-		(= :east option) {:x (inc (:x current)) :y (:y current)}
-		(= :south option) {:x (:x current) :y (dec (:y current))}
-		(= :west option) {:x (dec (:x current)) :y (:y current)}
+		(= :north option) {:x (:x current)       :y (inc (:y current))}
+		(= :east option)  {:x (inc (:x current)) :y (:y current)}
+		(= :south option) {:x (:x current)       :y (dec (:y current))}
+		(= :west option)  {:x (dec (:x current)) :y (:y current)}
 		))
 
 (defn go [kw]
@@ -45,13 +45,18 @@
 (defn solve [maze current]
 	(let [visits (:visits (maze current))]
 		(cond 
-			(nil? visits) 
-			(>= 1 visits) ())))
+			(nil? visits) nil
+			(>= 1 visits) nil)))
 
-(def chooose [maze options coord]
-	(first (sort-by :visits (map maze (map #({:dir % :pos (option2coord % maze)}) options))))
+(defn choose [maze options coord]
+	(cond (count options)
+	(first 
+		(sort-by :visits 
+			(map 
+				#(assoc % :visits (maze (:pos %))) 
+				(map #(hash-map :dir % :pos (option2coord % maze)) options)))))
 
 (defn -main [& args]
-	(solve start [0 0])
+	(choose start #{:east} {:x 0 :y 0})
 	;(start)
 	)
