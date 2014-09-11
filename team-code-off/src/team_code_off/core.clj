@@ -7,12 +7,51 @@
 (def address_root "http://ec2-54-77-13-3.eu-west-1.compute.amazonaws.com:8802/")
 
 (defn options [response]
-	[(re-find #"north" response)
+	(into #{} (remove #(nil? %1) (map keyword [(re-find #"north" response)
 	 (re-find #"east" response)
 	 (re-find #"south" response)
 	 (re-find #"west" response)
-		])
+		]))))
+
+;position [x,y]
+(defn look []
+	(let [response (http/get (str address_root token "look" ))]
+  	  (options (:body @response))))
+
+(def start {
+	{:position {:x 0  :y 0} :exits (look) :visits 1}
+	})
+
+(defn won? [response]
+	(re-find #"complete" response))
+
+(defn option2coord [option current]
+	(cond 
+		(= :north option) {:x (:x current) :y (inc (:y current))}
+		(= :east option) {:x (inc (:x current)) :y (:y current)}
+		(= :south option) {:x (:x current) :y (dec (:y current))}
+		(= :west option) {:x (dec (:x current)) :y (:y current)}
+		))
+
+(defn go [kw]
+	(let [response (http/post (str address_root token (name kw)))
+	      body (:body response)
+		  status (:status response)]
+		(cond 
+			(not (= 200 status )) (throw (Exception. (str "Invalid response code!" status)))
+			(won? response) (do (println "DONE") (System/exit 0))
+			:else (options response))))
+
+(defn solve [maze current]
+	(let [visits (:visits (maze current))]
+		(cond 
+			(nil? visits) 
+			(>= 1 visits) ())))
+
+(def chooose [maze options coord]
+	(first (sort-by :visits (map maze (map #({:dir % :pos (option2coord % maze)}) options))))
 
 (defn -main [& args]
-	(let [response1 (http/get (str address_root token "look" ))]
-  	(println (options (:body @response1)))))
+	(solve start [0 0])
+	;(start)
+	)
